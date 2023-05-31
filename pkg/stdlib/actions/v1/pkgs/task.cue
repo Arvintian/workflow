@@ -1,6 +1,6 @@
 
-let defaultToolImage = "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/entrypoint:v0.27.2"
-let defaultBaseImage = "gcr.io/distroless/base@sha256:aa4fd987555ea10e1a4ec8765da8158b5ffdfef1e72da512c7ede509bc9966c4"
+let defaultToolImage = "registry.cn-beijing.aliyuncs.com/liteyun-labs/tektoncd-pipeline-entrypoint:v0.27.2"
+let defaultBaseImage = "registry.cn-beijing.aliyuncs.com/liteyun-labs/distroless-base:aa4fd987"
 
 #Task: {
 	#do:       "steps"
@@ -9,6 +9,7 @@ let defaultBaseImage = "gcr.io/distroless/base@sha256:aa4fd987555ea10e1a4ec8765d
 	workspaces: [_name_=string]: #workspace & {name: "\(_name_)"}
 	secrets: [_name_=string]:    #secret & {name:    "\(_name_)"}
     pullSecrets: [...string]
+    ownerReferences: [...#Reference]
 	steps: [...#Script]
 
 	toolImage: *defaultToolImage | string
@@ -38,6 +39,7 @@ let defaultBaseImage = "gcr.io/distroless/base@sha256:aa4fd987555ea10e1a4ec8765d
                 pullSecrets_: pullSecrets
 				toolImage_:  toolImage
 				baseImage_:  baseImage
+                ownerReferences_: ownerReferences
 			}
 
 			metadata: {
@@ -69,6 +71,14 @@ let defaultBaseImage = "gcr.io/distroless/base@sha256:aa4fd987555ea10e1a4ec8765d
 	secretMounts: [...{secret: #secret, mountPath: string}]
 }
 
+#Reference: {
+    apiVersion: string
+    controller: *true | bool
+    kind: string
+    name: string
+    uid: string
+}
+
 #workspace: {
 	name: string
 }
@@ -88,6 +98,7 @@ let defaultBaseImage = "gcr.io/distroless/base@sha256:aa4fd987555ea10e1a4ec8765d
 		secretVolumes_: [ for x in secrets_ {name: x.name, secret: {secretName: x.name, items: x.items}}]
 		toolImage_: string
 		baseImage_: string
+        ownerReferences_: [...#Reference]
 	}
 
 	apiVersion: "v1"
@@ -96,6 +107,7 @@ let defaultBaseImage = "gcr.io/distroless/base@sha256:aa4fd987555ea10e1a4ec8765d
 		annotations: "vela.dev/ready": "READY"
 		namespace: *"default" | string
 		name:      string
+        ownerReferences: _settings.ownerReferences_
 	}
 	spec: {
 		containers: [...#StepContainer]
